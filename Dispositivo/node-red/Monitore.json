@@ -1,0 +1,30 @@
+[
+    {
+        "id": "fa172efe033c3b90",
+        "type": "change",
+        "z": "c44257f2031dca5d",
+        "name": "",
+        "rules": [
+            {
+                "t": "set",
+                "p": "url",
+                "pt": "msg",
+                "to": "http",
+                "tot": "flow"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 380,
+        "y": 640,
+        "wires": [
+            [
+                "a19db9ac236e2983",
+                "26d8384d03b75e3a"
+            ]
+        ]
+    }
+]
