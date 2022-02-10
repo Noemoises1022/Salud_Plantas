@@ -2,7 +2,7 @@ import Adafruit_DHT
 import time  
 import RPi.GPIO as GPIO
 channel_DHT11 = 4
-channel_Hum = 17
+channel_Hum = 18
 GPIO.setmode(GPIO.BCM)
 GPIO.setup(channel_Hum,GPIO.IN)
 
