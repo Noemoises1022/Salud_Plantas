@@ -49,15 +49,17 @@
 #include "driver/rtc_io.h"
 #include <SPIFFS.h>  //libreria para SPIFFS
 #include <FS.h>
-#include <ESPAsyncWebServer.h> //libreria para web server
+#include <ESPAsyncWebServer.h> //Libreria para web server
 #include <StringArray.h>
+#include <DHT.h> //Libreria para el sensor de temepratura
+
 
 
 //**************************************
 //****** CONFIGURACION DE PINES ********
 //**************************************
 
-#define LED_STATUS 33 // Definido para marcar la conexion con el wi-fi 
+#define LED_STATUS 33 // Definido para marcar la conexion con el wi-fi
 #define FLASH 4 // Usado para el flash y para indicar la conexion con MQTT
 
 
@@ -84,6 +86,19 @@
 #define PCLK_GPIO_NUM     22
 
 
+
+//**************************************
+//***** CONFIG. PINES DE SENSORES ******
+//**************************************
+
+//Definimos en que pin se recibira la informacion
+ #define DHTPIN 12   
+ #define HUMPIN 13 
+//definimos el tipo de sensor DTH usaremos
+ #define DHTTYPE DHT11  
+
+
+
 //**************************************
 //******* CONFIGURACION DEL WIFI *******
 //**************************************
@@ -97,11 +112,10 @@
 //******* CONFIGURACION DEL MQTT *******
 //**************************************
 
-#define mqtt_servidor "18.193.126.219"  //ip del broker a conectar
+#define mqtt_servidor "3.126.191.185"  //ip del broker a conectar
 #define mqtt_puerto 1883 //Puerto al que se conectara
-#define clientId "Planta1" //Id del cliente que se conectara
-#define topic "SaludPlantas/Esp32/SistemaDeteccion" //Tema a suscribirse
-#define topicFoto "SaludPlantas/Esp32/Foto/Planta1" //Tema donde se enviara la foto
+#define clientId "Planta01" //Id del cliente que se conectara
+#define topic "SaludPlantas/Esp32/SistemaDeteccion/Planta01"  //Tema a suscribirse
 
 
 
@@ -112,6 +126,7 @@
 WiFiClient espClient; //Maneja los datos de conexion WiFi
 PubSubClient client(espClient); //Maneja los datos de conexion al broker
 AsyncWebServer server(80); //Se crea el servidor web en el peurto 80
+DHT dht(DHTPIN, DHTTYPE); //llamamos al objeto y mandamos el tipo de sensor y el pin
 
 
 //**************************************
@@ -121,8 +136,14 @@ AsyncWebServer server(80); //Se crea el servidor web en el peurto 80
 double timeLast, timeNow; // Variables para el control de tiempo no bloqueante
 int wait = 5000;//tiempo de espera
 bool primera = false; //variable que nos indica si es la primera vez que nos conectamos al broker
-const char* mqtt_servidorN = "127.0.0.1"; //Servidor que va cambiar con una señal del MQTT
-String localip="";
+//const char* mqtt_servidorN = "127.0.0.1"; //Servidor que va cambiar con una señal del MQTT
+String localip = ""; // variable apra guardar la direccion ip de la tarjeta
+int tipo_envio= 0; // variable que nos indica el tipo de envio que se va realizar
+//variable utilziadas apra guardar datos de los sensores
+float h = 0.0;
+float t = 0.0;
+float f = 0.0;
+int humedadT = 0; //humedad de la tierra
 
 
 //************************
@@ -138,6 +159,7 @@ void mqtt_llamada(char* topicRes, byte* message, unsigned int length); //Funcion
 bool verificar_foto( fs::FS &fs ); //Funcion para verificar la foto toamda
 void tomar_foto(); //Funcion que toma una foto 
 void enviar_foto(fs::FS &fs );//esta funcion envia la foto tomada
+void leer_sensores(); //Funcion que toma los datos de los sensores conectados a la tarjeta
 
 
 
@@ -232,6 +254,10 @@ void setup() {
   // Iniciamos el servidor
   server.begin();
 
+
+  //iniciamos el sensor DTH
+  Serial.println(F("Prueba de coenxion"));
+  dht.begin();
   
   timeLast = millis (); // Inicia el control de tiempo
 
@@ -251,7 +277,7 @@ void loop(){
     reconectar_broker();  // En caso de que no haya conexión, ejecutar la función de reconexión
   }
   client.loop(); // Ejecuta las funciones necesarias para la comunicación con el broker
-  //mqtt_envio();
+
 }//Fin loop()
 
 
@@ -279,7 +305,7 @@ void conectar_wifi(){
  
   while (WiFi.status() != WL_CONNECTED) { // Este bucle espera a que se realice la conexión
     digitalWrite (LED_STATUS, LOW); //Se enciende el led de status
-    delay(500); //Espera a que se realice la conexion
+    delay(1000); //Espera a que se realice la conexion
     digitalWrite (LED_STATUS, HIGH); //Se apaga el led de status
     Serial.print(" (´･_･`) ");  // Indicador de progreso
     delay (5);
@@ -350,8 +376,33 @@ void reconectar_broker(){
 
 void mqtt_envio(){
   timeNow = millis(); // Control de tiempo para esperas no bloqueantes
-  if (timeNow - timeLast > wait) { // Manda un mensaje por MQTT cada cinco segundos
+  // Si hay un tipo de envio 1 se envia el mensaje para pedir la foto
+  if(tipo_envio == 1){
+      
+      // se notiica que la foto ya fue tomada
+      client.publish(topic,"{\"mensaje\":\"foto_tomada\"}");
+      
+      // se envia al solicitud HTTP para recueprar la foto
+      String solicitud="{\"mensaje\":\"http\",\"servicio\":\"http://";
+      solicitud+=localip;
+      solicitud+="/enviar-foto\"}";
+      client.publish(topic,solicitud.c_str());
+  }else if(tipo_envio == 2){
+      
+      // se notiica que la los datos fueron tomados
+      client.publish(topic,"{\"mensaje\":\"datos_leidos\"}");
+      delay (5000);
+      // se envian los datos
+      String solicitud="{\"mensaje\":\"datos_sensores\",\"servicio\":{\"Temperatura\":\"";
+      solicitud += t;
+      solicitud += "\",\"Humedad\":\"";
+      solicitud += h;
+      solicitud += "\",\"Humedad_tierra\":\"";
+      solicitud += humedadT;
+      solicitud += "\"}}";
+      client.publish(topic,solicitud.c_str());
   }
+  tipo_envio = 0;
 
 }//Fin mqtt_envio()
 
@@ -381,15 +432,17 @@ void mqtt_llamada(char* topicRes, byte* message, unsigned int length){
 
   // Ejemplo, en caso de recibir el mensaje true - false, se cambiará el estado del led soldado en la placa.
   // El ESP323CAM está suscrito al tema esp/output
-  if (String(topic) == "SaludPlantas/Esp32/SistemaDeteccion") {  // En caso de recibirse mensaje en el tema esp32/output
-    if(messageTemp == "toma_foto"){
-      tomar_foto();
-      client.publish(topic,"{\"mensaje\":\"foto_tomada\"}");
-      String solicitud="{\"mensaje\":\"http\",\"servicio\":\"http://";
-      solicitud+=localip;
-      solicitud+="/enviar-foto\"}";
-      client.publish(topic,solicitud.c_str());
+  ////-----------------------------------------AQUI---------------------------------
+  if (String(topic) == "SaludPlantas/Esp32/SistemaDeteccion/Planta01") {  // En caso de recibirse mensaje en el tema esp32/
+    if(messageTemp == "toma_foto"){// si el mensaje solicita toamr una foto
+      tomar_foto(); // tomamos la foto
+      tipo_envio = 1;
+    }else if(messageTemp == "leer_sensores"){ // Si el mensaje solicita leer los sensores
+      leer_sensores(); //leemos los sensores
+      tipo_envio = 2;
     }
+
+    mqtt_envio(); //enviamos los datos necesarios 
   }
 }//Fin mqtt_llamada
 
@@ -449,53 +502,18 @@ void tomar_foto(){
 
 
 
+//**********************************
+//***** ENVIAR DATOS SENSORES ******
+//**********************************
 
+void leer_sensores(){
+    Serial.println("leee datos");
+  do {
+    // Obtenemos los datos del sensor
+    h = dht.readHumidity();
+    t = dht.readTemperature();
+    f = dht.readTemperature(true);
+    humedadT = analogRead(HUMPIN);
+  }while( isnan(t) || isnan(f));
 
-
-
-
-
-
-//************************
-//***** ENVIAR FOTO ******
-//************************
-/*
-void enviar_foto(fs::FS &fs ){
-  Serial.printf("enviando...\n");
-  client.publish(topicFoto,"ini_foto");
-  delay(2000); //Espera 2 segundos hasta enviar al foto 
-  
-  File foto = fs.open( FOTO ,"r"); //Abrimos el archivo
-  int ancho = 65;//ancho de los paquetes
-  int partes = foto.size()/ancho;
-  int resto=foto.size()-(partes*ancho);
-  Serial.printf("%d  %d %d\n",partes,resto,foto.size());
-
-  //armado de paquetes
-  for(int i = 0; i <= partes; ++i){
-      //Definimos el tamaño de la cadena que se va enviar
-      int tam = 0;
-      if(i == partes){
-        tam=resto*3;
-      }else{
-        tam = ancho*3;
-      }
-      //cadena se descombrime en un arreglo de caracteres
-      char msj [tam+1];
-      for(int j = 0; j < tam; ++j){
-        int leido = (int)foto.read();
-        (leido / 100) > 0 ? msj[j]=leido/100 + '0' : msj[j]=0 + '0';
-        ++j;
-        ((leido % 100)/10) > 0 ? msj[j]=((leido % 100)/10) + '0' : msj[j]=0 + '0';
-        ++j;
-        msj[j]=((leido % 100)%10) + '0';
-      }
-      msj[tam]='\0';
-      client.publish(topicFoto,msj); //publicacion del paquete
-  }
-  foto.close();
-  Serial.printf("Foto enviada づ￣ 3￣)づ\n");
-  client.publish(topicFoto,"fin_foto");
-}//Fin enviar_foto()
-
-*/
+}//Fin leer_sensores
