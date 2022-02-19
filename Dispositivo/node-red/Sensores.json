@@ -1,0 +1,237 @@
+[
+    {
+        "id": "d9edf8f958b1d307",
+        "type": "tab",
+        "label": "Sensores",
+        "disabled": false,
+        "info": "",
+        "env": []
+    },
+    {
+        "id": "45cca60efa5e9e7c",
+        "type": "mqtt in",
+        "z": "d9edf8f958b1d307",
+        "name": "",
+        "topic": "SaludPlantas/Esp32/SistemaDeteccion/Planta01",
+        "qos": "2",
+        "datatype": "auto",
+        "broker": "f889e405081dc01d",
+        "nl": false,
+        "rap": true,
+        "rh": 0,
+        "inputs": 0,
+        "x": 200,
+        "y": 180,
+        "wires": [
+            [
+                "5e9012e20a63f149",
+                "9eb20ebd9dcaf139"
+            ]
+        ]
+    },
+    {
+        "id": "1adb8d4b2d6f9c2c",
+        "type": "inject",
+        "z": "d9edf8f958b1d307",
+        "name": "",
+        "props": [
+            {
+                "p": "sensores",
+                "v": "true",
+                "vt": "bool"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "Datos Sensores",
+        "x": 140,
+        "y": 500,
+        "wires": [
+            [
+                "60333dae3eeef55e"
+            ]
+        ]
+    },
+    {
+        "id": "60333dae3eeef55e",
+        "type": "change",
+        "z": "d9edf8f958b1d307",
+        "name": "",
+        "rules": [
+            {
+                "t": "set",
+                "p": "payload",
+                "pt": "msg",
+                "to": "leer_sensores",
+                "tot": "str"
+            },
+            {
+                "t": "set",
+                "p": "rev",
+                "pt": "flow",
+                "to": "0",
+                "tot": "num"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 380,
+        "y": 500,
+        "wires": [
+            [
+                "3e2858aa02847268",
+                "628d567e16910fee"
+            ]
+        ]
+    },
+    {
+        "id": "cd5ac42032fb787f",
+        "type": "function",
+        "z": "d9edf8f958b1d307",
+        "name": "",
+        "func": "if(msg.payload.mensaje==\"datos_leidos\"){// si recibe el mensaje de recibido\n    flow.set('rev',1);// se guarda en al variable de confirmacion\n    return msg;\n}",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 380,
+        "y": 440,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "3e2858aa02847268",
+        "type": "delay",
+        "z": "d9edf8f958b1d307",
+        "name": "",
+        "pauseType": "delay",
+        "timeout": "20",
+        "timeoutUnits": "seconds",
+        "rate": "1",
+        "nbRateUnits": "1",
+        "rateUnits": "second",
+        "randomFirst": "1",
+        "randomLast": "5",
+        "randomUnits": "seconds",
+        "drop": false,
+        "allowrate": false,
+        "outputs": 1,
+        "x": 600,
+        "y": 440,
+        "wires": [
+            [
+                "a022aa32b1499a30"
+            ]
+        ]
+    },
+    {
+        "id": "a022aa32b1499a30",
+        "type": "switch",
+        "z": "d9edf8f958b1d307",
+        "name": "",
+        "property": "rev",
+        "propertyType": "flow",
+        "rules": [
+            {
+                "t": "eq",
+                "v": "0",
+                "vt": "str"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 1,
+        "x": 750,
+        "y": 440,
+        "wires": [
+            [
+                "60333dae3eeef55e"
+            ]
+        ]
+    },
+    {
+        "id": "628d567e16910fee",
+        "type": "mqtt out",
+        "z": "d9edf8f958b1d307",
+        "name": "",
+        "topic": "SaludPlantas/Esp32/SistemaDeteccion/Planta01",
+        "qos": "",
+        "retain": "",
+        "respTopic": "",
+        "contentType": "",
+        "userProps": "",
+        "correl": "",
+        "expiry": "",
+        "broker": "f889e405081dc01d",
+        "x": 820,
+        "y": 500,
+        "wires": []
+    },
+    {
+        "id": "5e9012e20a63f149",
+        "type": "json",
+        "z": "d9edf8f958b1d307",
+        "name": "",
+        "property": "payload",
+        "action": "obj",
+        "pretty": true,
+        "x": 230,
+        "y": 440,
+        "wires": [
+            [
+                "cd5ac42032fb787f"
+            ]
+        ]
+    },
+    {
+        "id": "9eb20ebd9dcaf139",
+        "type": "json",
+        "z": "d9edf8f958b1d307",
+        "name": "",
+        "property": "payload",
+        "action": "obj",
+        "pretty": true,
+        "x": 550,
+        "y": 180,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "f889e405081dc01d",
+        "type": "mqtt-broker",
+        "name": "",
+        "broker": "3.126.191.185",
+        "port": "1883",
+        "clientid": "U3",
+        "autoConnect": true,
+        "usetls": false,
+        "protocolVersion": "4",
+        "keepalive": "60",
+        "cleansession": true,
+        "birthTopic": "",
+        "birthQos": "0",
+        "birthPayload": "",
+        "birthMsg": {},
+        "closeTopic": "",
+        "closeQos": "0",
+        "closePayload": "",
+        "closeMsg": {},
+        "willTopic": "",
+        "willQos": "0",
+        "willPayload": "",
+        "willMsg": {},
+        "sessionExpiry": ""
+    }
+]

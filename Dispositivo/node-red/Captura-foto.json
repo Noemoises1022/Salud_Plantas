@@ -1,0 +1,457 @@
+[
+    {
+        "id": "c44257f2031dca5d",
+        "type": "tab",
+        "label": "CapturaIMG",
+        "disabled": false,
+        "info": "",
+        "env": []
+    },
+    {
+        "id": "165c46ad8ac5759c",
+        "type": "inject",
+        "z": "c44257f2031dca5d",
+        "name": "",
+        "props": [
+            {
+                "p": "foto",
+                "v": "true",
+                "vt": "bool"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "Solicitar Foto",
+        "x": 810,
+        "y": 260,
+        "wires": [
+            [
+                "8d4bb6a6028f52b3"
+            ]
+        ]
+    },
+    {
+        "id": "3fd804ccf343ccfa",
+        "type": "mqtt in",
+        "z": "c44257f2031dca5d",
+        "name": "",
+        "topic": "SaludPlantas/Esp32/SistemaDeteccion/Planta01",
+        "qos": "2",
+        "datatype": "auto",
+        "broker": "f889e405081dc01d",
+        "nl": false,
+        "rap": true,
+        "rh": 0,
+        "inputs": 0,
+        "x": 180,
+        "y": 200,
+        "wires": [
+            [
+                "9a6c0b7f3852fd94"
+            ]
+        ]
+    },
+    {
+        "id": "de68aba60cd3a432",
+        "type": "function",
+        "z": "c44257f2031dca5d",
+        "name": "",
+        "func": "if(msg.payload.mensaje==\"foto_tomada\"){// si recibe el mensaje de recibido\n    flow.set('rev',1);// se guarda en al variable de confirmacion\n    return msg;\n}",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 720,
+        "y": 200,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "a8fe18f179af60f2",
+        "type": "delay",
+        "z": "c44257f2031dca5d",
+        "name": "",
+        "pauseType": "delay",
+        "timeout": "20",
+        "timeoutUnits": "seconds",
+        "rate": "1",
+        "nbRateUnits": "1",
+        "rateUnits": "second",
+        "randomFirst": "1",
+        "randomLast": "5",
+        "randomUnits": "seconds",
+        "drop": false,
+        "allowrate": false,
+        "outputs": 1,
+        "x": 1240,
+        "y": 200,
+        "wires": [
+            [
+                "e1d0b013b6cc1d4f"
+            ]
+        ]
+    },
+    {
+        "id": "e1d0b013b6cc1d4f",
+        "type": "switch",
+        "z": "c44257f2031dca5d",
+        "name": "",
+        "property": "rev",
+        "propertyType": "flow",
+        "rules": [
+            {
+                "t": "neq",
+                "v": "1",
+                "vt": "num"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 1,
+        "x": 1390,
+        "y": 200,
+        "wires": [
+            [
+                "8d4bb6a6028f52b3"
+            ]
+        ]
+    },
+    {
+        "id": "30de0120e2867396",
+        "type": "mqtt out",
+        "z": "c44257f2031dca5d",
+        "name": "",
+        "topic": "SaludPlantas/Esp32/SistemaDeteccion/Planta01",
+        "qos": "2",
+        "retain": "",
+        "respTopic": "",
+        "contentType": "",
+        "userProps": "",
+        "correl": "",
+        "expiry": "",
+        "broker": "f889e405081dc01d",
+        "x": 1400,
+        "y": 260,
+        "wires": []
+    },
+    {
+        "id": "8d4bb6a6028f52b3",
+        "type": "change",
+        "z": "c44257f2031dca5d",
+        "name": "",
+        "rules": [
+            {
+                "t": "set",
+                "p": "payload",
+                "pt": "msg",
+                "to": "toma_foto",
+                "tot": "str"
+            },
+            {
+                "t": "set",
+                "p": "rev",
+                "pt": "flow",
+                "to": "0",
+                "tot": "num"
+            },
+            {
+                "t": "set",
+                "p": "http",
+                "pt": "flow",
+                "to": "",
+                "tot": "str"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 1040,
+        "y": 260,
+        "wires": [
+            [
+                "a8fe18f179af60f2",
+                "30de0120e2867396"
+            ]
+        ]
+    },
+    {
+        "id": "9a6c0b7f3852fd94",
+        "type": "json",
+        "z": "c44257f2031dca5d",
+        "name": "",
+        "property": "payload",
+        "action": "obj",
+        "pretty": true,
+        "x": 550,
+        "y": 200,
+        "wires": [
+            [
+                "de68aba60cd3a432",
+                "4e186a353c850aed"
+            ]
+        ]
+    },
+    {
+        "id": "a19db9ac236e2983",
+        "type": "http request",
+        "z": "c44257f2031dca5d",
+        "name": "",
+        "method": "GET",
+        "ret": "bin",
+        "paytoqs": "body",
+        "url": "",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "authType": "",
+        "senderr": false,
+        "x": 1170,
+        "y": 400,
+        "wires": [
+            [
+                "3450c93fbd5e1372"
+            ]
+        ]
+    },
+    {
+        "id": "3450c93fbd5e1372",
+        "type": "file",
+        "z": "c44257f2031dca5d",
+        "name": "",
+        "filename": "",
+        "appendNewline": true,
+        "createDir": true,
+        "overwriteFile": "true",
+        "encoding": "none",
+        "x": 1340,
+        "y": 400,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "4e186a353c850aed",
+        "type": "function",
+        "z": "c44257f2031dca5d",
+        "name": "",
+        "func": "if(msg.payload.mensaje ==\"http\"){\n   //recuepramos el servicio  apra ahcer la peticion\n   flow.set('http',msg.payload.servicio)\n   //nombramos el nuevo archivo  de la foto\n   let num = flow.get('foto')\n   num += 1\n   flow.set('foto',num) \n   let archivo = \"/home/pi/Documents/Fotos_planta/Planta_\"+ num +\".jpg\"\n   flow.set('archivo',archivo)\n    return msg;    \n}\n",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 680,
+        "y": 400,
+        "wires": [
+            [
+                "fa172efe033c3b90"
+            ]
+        ]
+    },
+    {
+        "id": "26d8384d03b75e3a",
+        "type": "file",
+        "z": "c44257f2031dca5d",
+        "name": "",
+        "filename": "",
+        "appendNewline": true,
+        "createDir": false,
+        "overwriteFile": "delete",
+        "encoding": "none",
+        "x": 890,
+        "y": 500,
+        "wires": [
+            [
+                "fa172efe033c3b90"
+            ]
+        ]
+    },
+    {
+        "id": "8f25a4a34861dc09",
+        "type": "delay",
+        "z": "c44257f2031dca5d",
+        "name": "",
+        "pauseType": "delay",
+        "timeout": "3",
+        "timeoutUnits": "minutes",
+        "rate": "1",
+        "nbRateUnits": "1",
+        "rateUnits": "second",
+        "randomFirst": "1",
+        "randomLast": "5",
+        "randomUnits": "seconds",
+        "drop": false,
+        "allowrate": false,
+        "outputs": 1,
+        "x": 1100,
+        "y": 500,
+        "wires": [
+            [
+                "e18574bc0351b8da"
+            ]
+        ]
+    },
+    {
+        "id": "e18574bc0351b8da",
+        "type": "file in",
+        "z": "c44257f2031dca5d",
+        "name": "",
+        "filename": "",
+        "format": "utf8",
+        "chunk": false,
+        "sendError": false,
+        "encoding": "none",
+        "allProps": false,
+        "x": 880,
+        "y": 580,
+        "wires": [
+            [
+                "30a79875a2f3786a"
+            ]
+        ]
+    },
+    {
+        "id": "30a79875a2f3786a",
+        "type": "function",
+        "z": "c44257f2031dca5d",
+        "name": "",
+        "func": "if(msg.payload.length<10000){\n    return msg;\n}\n",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 720,
+        "y": 500,
+        "wires": [
+            [
+                "26d8384d03b75e3a"
+            ]
+        ]
+    },
+    {
+        "id": "fa172efe033c3b90",
+        "type": "change",
+        "z": "c44257f2031dca5d",
+        "name": "",
+        "rules": [
+            {
+                "t": "set",
+                "p": "url",
+                "pt": "msg",
+                "to": "http",
+                "tot": "flow"
+            },
+            {
+                "t": "set",
+                "p": "filename",
+                "pt": "msg",
+                "to": "archivo",
+                "tot": "flow"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 930,
+        "y": 400,
+        "wires": [
+            [
+                "a19db9ac236e2983",
+                "8f25a4a34861dc09"
+            ]
+        ]
+    },
+    {
+        "id": "918231a26304e01e",
+        "type": "inject",
+        "z": "c44257f2031dca5d",
+        "name": "",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "Inicio de foto",
+        "payload": "true",
+        "payloadType": "bool",
+        "x": 290,
+        "y": 100,
+        "wires": [
+            [
+                "2305bb3e770d9b07"
+            ]
+        ]
+    },
+    {
+        "id": "2305bb3e770d9b07",
+        "type": "change",
+        "z": "c44257f2031dca5d",
+        "name": "",
+        "rules": [
+            {
+                "t": "set",
+                "p": "foto",
+                "pt": "flow",
+                "to": "0",
+                "tot": "num"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 570,
+        "y": 80,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "f889e405081dc01d",
+        "type": "mqtt-broker",
+        "name": "",
+        "broker": "3.126.191.185",
+        "port": "1883",
+        "clientid": "U3",
+        "autoConnect": true,
+        "usetls": false,
+        "protocolVersion": "4",
+        "keepalive": "60",
+        "cleansession": true,
+        "birthTopic": "",
+        "birthQos": "0",
+        "birthPayload": "",
+        "birthMsg": {},
+        "closeTopic": "",
+        "closeQos": "0",
+        "closePayload": "",
+        "closeMsg": {},
+        "willTopic": "",
+        "willQos": "0",
+        "willPayload": "",
+        "willMsg": {},
+        "sessionExpiry": ""
+    }
+]
